@@ -14,7 +14,7 @@ import com.gayathri.videplayercompose.home.PostUiActions
 import com.gayathri.videplayercompose.ui.posts.PostInteractionBar
 
 @Composable
-fun VideoBottomView(video: Video, actions: PostUiActions) {
+fun VideoBottomView(video: Video) {
     Spacer(modifier = Modifier.height(8.dp))
     /*IconButton(onClick = { }) {
         Icon(

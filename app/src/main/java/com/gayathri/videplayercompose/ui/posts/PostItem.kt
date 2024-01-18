@@ -19,8 +19,7 @@ import com.gayathri.videplayercompose.home.PostUiActions
 @Composable
 fun PostItem(
     video: Video,
-    isLiked: Boolean,
-    actions: PostUiActions,
+    onPlayClicked: (video: Video) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -32,7 +31,7 @@ fun PostItem(
             contentDescription = video.description,
             modifier = Modifier.padding(top = 2.dp, bottom = 65.dp),
             onPlayClicked = {
-                actions.onPlayClicked?.invoke(video)
+                onPlayClicked.invoke(video)
             }
         )
         PostBottomView(

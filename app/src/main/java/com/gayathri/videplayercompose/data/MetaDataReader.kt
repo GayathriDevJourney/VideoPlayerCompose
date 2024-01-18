@@ -1,4 +1,4 @@
-package com.gayathri.videplayercompose
+package com.gayathri.videplayercompose.data
 
 import android.app.Application
 import android.net.Uri

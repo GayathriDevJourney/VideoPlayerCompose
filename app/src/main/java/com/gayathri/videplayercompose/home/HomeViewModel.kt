@@ -65,19 +65,13 @@ class HomeViewModel @Inject constructor(
     }
 
     fun postLike(videoId: Int, isLiked: Boolean) {
-        viewModelScope.launch {
+        /*viewModelScope.launch {
             if (isLiked) {
                 videoDatabase.likesDao().insert(LikesEntity(videoId))
             } else {
                 videoDatabase.likesDao().delete(videoId = videoId)
             }
-        }
-    }
-
-    fun getLike(videoId: Int) {
-        viewModelScope.launch {
-            videoDatabase.likesDao().getLikeStatus(videoId)
-        }
+        }*/
     }
 
     override fun onCreate(owner: LifecycleOwner) {

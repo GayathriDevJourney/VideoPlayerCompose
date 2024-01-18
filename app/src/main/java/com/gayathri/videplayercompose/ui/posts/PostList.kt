@@ -18,10 +18,10 @@ import kotlin.random.Random
 @Composable
 fun PostList(
     videos: List<Video>,
-    actions: PostUiActions,
     modifier: Modifier = Modifier,
     onScroll: (index: Int) -> Unit,
-    scrollPosition: Int
+    scrollPosition: Int,
+    onPlayClicked: (video: Video) -> Unit,
 ) {
     val lazyListState = rememberLazyListState(initialFirstVisibleItemIndex = scrollPosition)
     LaunchedEffect(lazyListState) {
@@ -36,8 +36,7 @@ fun PostList(
         items(videos, key = { it.id }) {
             PostItem(
                 video = it,
-                isLiked = Random.nextBoolean(),
-                actions
+                onPlayClicked = onPlayClicked
             )
         }
     }

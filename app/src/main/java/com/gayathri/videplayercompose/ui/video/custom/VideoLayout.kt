@@ -16,6 +16,7 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,12 +24,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.gayathri.videplayercompose.ui.video.custom.state.PlayerControllerState
+import com.gayathri.videplayercompose.ui.video.custom.state.PlayerState
 
 @Composable
 fun VideoLayout(
     state: PlayerControllerState,
-    action: (VideoPlayerControlAction) -> Unit,
-    playerDurationDataModel: PlayerProgressBarDataModel
+    action: (VideoPlayerControlAction) -> Unit
 ) {
     with(state) {
         AnimatedVisibility(
@@ -46,19 +48,18 @@ fun VideoLayout(
                     PlayerIcon(icon = Icons.Rounded.FastRewind) {
                         action(VideoPlayerControlAction.OnRewind)
                     }
-                    PlayerIcon(
-                        icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayCircle
-                    ) {
-                        action(if (isPlaying) VideoPlayerControlAction.OnPause else VideoPlayerControlAction.OnPlay)
+                    when (playerState) {
+                        PlayerState.BUFFERING -> CircularProgressIndicator()
+                        else -> PlayerIcon(
+                            icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayCircle
+                        ) {
+                            action(if (isPlaying) VideoPlayerControlAction.OnPause else VideoPlayerControlAction.OnPlay)
+                        }
                     }
+
                     PlayerIcon(icon = Icons.Rounded.FastForward) {
                         action(VideoPlayerControlAction.OnForward)
                     }
-                }
-            }
-            Column {
-                DurationController(Modifier, playerDurationDataModel) {
-                    action(VideoPlayerControlAction.OnSeekChanged(it))
                 }
             }
         }

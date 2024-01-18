@@ -31,7 +31,6 @@ fun VideoContainer(viewModel: VideoPlayerViewModel, lifecycle: Lifecycle.Event) 
             is VideoPlayerUiState.Loading -> Loader()
             is VideoPlayerUiState.Content -> PlayerContainerView(
                 viewModel,
-                lifecycle,
                 playerUiState.video
             )
 
@@ -40,20 +39,15 @@ fun VideoContainer(viewModel: VideoPlayerViewModel, lifecycle: Lifecycle.Event) 
     }
 }
 
-@OptIn(UnstableApi::class) @Composable
-fun PlayerContainerView(viewModel: VideoPlayerViewModel, lifecycle: Lifecycle.Event, video: Video) {
+@OptIn(UnstableApi::class)
+@Composable
+fun PlayerContainerView(viewModel: VideoPlayerViewModel, video: Video) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        VideoView(viewModel = viewModel, lifecycle = lifecycle)
-        VideoBottomView(video, actions = PostUiActions(
-            onLikeClicked = { videoId, isLiked ->
-                viewModel.postLike(videoId, isLiked)
-            },
-            onCommentsClicked = {},
-            onSendClicked = { }
-        ))
+        VideoView(viewModel = viewModel)
+        VideoBottomView(video)
     }
 }

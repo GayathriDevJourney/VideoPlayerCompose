@@ -1,6 +1,7 @@
 package com.gayathri.videplayercompose.ui.home
 
 import android.content.Intent
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -59,10 +60,12 @@ fun HomeContainer(
 ) {
     viewModel.ObserveLifecycleEvents(LocalLifecycleOwner.current.lifecycle)
     val homeUiState by viewModel.uiState.collectAsState()
-    when (val uiState = homeUiState) {
-        is HomeUiState.Loading -> Loader()
-        is HomeUiState.Content -> HomeVideoContentList(uiState, viewModel)
-        is HomeUiState.Error -> Text(text = uiState.exception.message.toString())
+    Box(modifier = Modifier.padding(innerPadding)) {
+        when (val uiState = homeUiState) {
+            is HomeUiState.Loading -> Loader()
+            is HomeUiState.Content -> HomeVideoContentList(uiState, viewModel)
+            is HomeUiState.Error -> Text(text = uiState.exception.message.toString())
+        }
     }
 }
 
@@ -72,17 +75,10 @@ fun HomeVideoContentList(content: HomeUiState.Content, viewModel: HomeViewModel)
     PostList(
         videos = content.data,
         scrollPosition = viewModel.scrollIndex,
-        onScroll = { viewModel.scrollPosition(it) },
-        actions = PostUiActions(
-            onLikeClicked = { videoId, isLiked ->
-                viewModel.postLike(videoId, isLiked)
-            },
-            onCommentsClicked = {},
-            onSendClicked = { }
-        ) { video ->
-            val intent = Intent(context, VideoPlayerActivity::class.java)
-            intent.putExtra("videoId", video.id)
-            context.startActivity(intent)
-        }
-    )
+        onScroll = { viewModel.scrollPosition(it) }
+    ) { video ->
+        val intent = Intent(context, VideoPlayerActivity::class.java)
+        intent.putExtra("videoId", video.id)
+        context.startActivity(intent)
+    }
 }

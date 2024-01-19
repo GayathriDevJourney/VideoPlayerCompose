@@ -66,10 +66,8 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
             factory = { context ->
                 PlayerView(context).also {
                     it.player = viewModel.player
-                    Log.d("video_player_log", "requestedOrientation $isPlaying")
                     (context as? Activity)?.requestedOrientation =
                         ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-//                    it.controllerAutoShow = false
                     it.useController = false // default controller disabled
                 }
             }, modifier = Modifier
@@ -99,7 +97,6 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
                 viewModel.onAction(VideoPlayerControlAction.OnSeekChanged(it))
             },
             onExpand = {
-                Log.d("video_player_log", "orientation $orientation")
                 viewModel.onOrientationChange()
             })
 

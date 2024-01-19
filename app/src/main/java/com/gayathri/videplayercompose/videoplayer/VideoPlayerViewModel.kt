@@ -1,38 +1,46 @@
 package com.gayathri.videplayercompose.videoplayer
 
 import android.os.Bundle
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
 import com.gayathri.ktor_client.AppConstant
-import com.gayathri.videplayercompose.data.local.LikesEntity
+import com.gayathri.ktor_client.model.Video
 import com.gayathri.videplayercompose.data.local.VideoDatabase
+import com.gayathri.videplayercompose.data.local.VideoEntity
 import com.gayathri.videplayercompose.data.local.mapToUiModel
 import com.gayathri.videplayercompose.ui.video.VideoPlayerUiState
 import com.gayathri.videplayercompose.ui.video.custom.PlayerProgressBarDataModel
 import com.gayathri.videplayercompose.ui.video.custom.VideoPlayerControlAction
 import com.gayathri.videplayercompose.ui.video.custom.state.PlayerOrientation
 import com.gayathri.videplayercompose.ui.video.custom.state.PlayerState
+import com.gayathri.videplayercompose.utils.TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class VideoPlayerViewModel @Inject constructor(
-    val player: Player,
+    val player: ExoPlayer,
     private val videoDatabase: VideoDatabase,
 ) : ViewModel(), DefaultLifecycleObserver {
 
+    private lateinit var playlistData: List<Video>
     private val _uiState = MutableStateFlow<VideoPlayerUiState>(VideoPlayerUiState.Loading)
     val uiState: StateFlow<VideoPlayerUiState> = _uiState.asStateFlow()
 
@@ -69,10 +77,10 @@ class VideoPlayerViewModel @Inject constructor(
             ) {
                 println("video_player_log : onEvents $events")
             }
+            println("video_player_log : onEvents $events")
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            super.onPlaybackStateChanged(playbackState)
             val state = when (playbackState) {
                 Player.STATE_IDLE -> PlayerState.IDLE
                 Player.STATE_BUFFERING -> PlayerState.BUFFERING
@@ -80,47 +88,121 @@ class VideoPlayerViewModel @Inject constructor(
                 Player.STATE_ENDED -> PlayerState.ENDED
                 else -> PlayerState.NONE
             }
+            println("video_player_log : onPlaybackStateChanged $playbackState")
             _playerState.update { state }
+            super.onPlaybackStateChanged(playbackState)
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            super.onPlayerError(error)
+            println("$TAG : error ${error.message}")
+            val cause = error.cause
+            if (cause is HttpDataSource.HttpDataSourceException) {
+                println("$TAG : error HttpDataSourceException")
+                // An HTTP error occurred.
+                // It's possible to find out more about the error both by casting and by querying
+                // the cause.
+                if (cause is HttpDataSource.InvalidResponseCodeException) {
+                    // Cast to InvalidResponseCodeException and retrieve the response code, message
+                    // and headers.
+                    println("$TAG : error InvalidResponseCodeException")
+                } else {
+                    // Try calling httpError.getCause() to retrieve the underlying cause, although
+                    // note that it may be null.
+                    println("$TAG : error ${cause.cause}")
+                }
+            }
+        }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+            super.onMediaMetadataChanged(mediaMetadata)
+            println("$TAG : mediaMetadata onMediaMetadataChanged")
+        }
+
+        override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
+            super.onPlaylistMetadataChanged(mediaMetadata)
+            println("$TAG : mediaMetadata onPlaylistMetadataChanged")
+        }
+
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            super.onMediaItemTransition(mediaItem, reason)
+            println("$TAG : mediaMetadata onMediaItemTransition ${mediaItem?.mediaId} $reason")
+            getCurrentPlayingMetaData(mediaItem)
+        }
+    }
+
+    private fun getCurrentPlayingMetaData(mediaItem: MediaItem?) {
+        if (::playlistData.isInitialized) {
+            playlistData.find {
+                it.id.toString() == mediaItem?.mediaId
+            }?.let { video ->
+                _uiState.update {
+                    VideoPlayerUiState.Content(video)
+                }
+            }
         }
     }
 
     init {
-        println("video_player_log init")
-        _uiState.update {
-            VideoPlayerUiState.Loading
-        }
-        println("video_player_log prepare $uiState")
+        _uiState.update { VideoPlayerUiState.Loading }
         player.prepare()
         addListeners()
     }
 
     @OptIn(UnstableApi::class)
     private fun addListeners() {
-        println("video_player_log : addListeners")
         player.addListener(listener)
     }
 
     override fun onCleared() {
         super.onCleared()
         player.removeListener(listener)
-        println("video_player_log : onCleared")
         player.release()
     }
 
 
     fun setVideo(extras: Bundle?) {
         val videoId = extras?.getInt("videoId")
-        println("video_player_log videoId $videoId")
         videoId?.let {
             viewModelScope.launch {
                 val video = videoDatabase.videoDao().getVideo(videoId)
-                println("video_player_log videoId $video.source")
                 player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
                 player.play()
                 _uiState.update {
                     VideoPlayerUiState.Content(video.mapToUiModel())
                 }
             }
+            createPlaylist(videoId)
+        }
+    }
+
+    private fun createPlaylist(videoId: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistMediaItem = mutableListOf<MediaItem>()
+            val mediaItems = videoDatabase.videoDao().getVideos().filter {
+                it.id > videoId
+            }.map {
+                playlistMediaItem.add(createMediaItem(it))
+                it.mapToUiModel()
+            }
+            val prevMediaItems = videoDatabase.videoDao().getVideos().filter {
+                it.id < videoId
+            }.map {
+                playlistMediaItem.add(createMediaItem(it))
+                it.mapToUiModel()
+            }
+            withContext(Dispatchers.Main) {
+                player.addMediaItems(playlistMediaItem)
+            }
+            playlistData = mediaItems.plus(prevMediaItems)
+        }
+    }
+
+    private fun createMediaItem(video: VideoEntity): MediaItem {
+        // Build a media item with a media ID.
+        with(video.mapToUiModel()) {
+            val uri = AppConstant.MEDIA_BASE_URL.plus(source)
+            return MediaItem.Builder().setUri(uri).setMediaId(id.toString()).build()
         }
     }
 

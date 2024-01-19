@@ -22,7 +22,7 @@ import javax.inject.Singleton
 object VideoPlayerModule {
     @Provides
     @ViewModelScoped
-    fun provideVideoPlayer(app: Application): Player {
+    fun provideVideoPlayer(app: Application): ExoPlayer {
         return ExoPlayer.Builder(app).build()
     }
 

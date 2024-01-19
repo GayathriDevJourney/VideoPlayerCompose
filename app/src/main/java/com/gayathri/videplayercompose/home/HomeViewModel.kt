@@ -13,6 +13,7 @@ import com.gayathri.videplayercompose.data.local.mapToEntity
 import com.gayathri.videplayercompose.data.local.mapToUiModelList
 import com.gayathri.videplayercompose.data.repository.MovieRepository
 import com.gayathri.videplayercompose.ui.home.HomeUiState
+import com.gayathri.videplayercompose.utils.TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -111,5 +112,3 @@ class HomeViewModel @Inject constructor(
         scrollIndex = index
     }
 }
-
-const val TAG = "video_player_log"

@@ -22,7 +22,7 @@ fun VideoPlayerPage(
     println("video_player_log VideoPlayerPage")
     viewModel.setVideo(extras)
 
-    var lifecycle by remember { mutableStateOf(Lifecycle.Event.ON_CREATE) }
+    val lifecycle by remember { mutableStateOf(Lifecycle.Event.ON_CREATE) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
 

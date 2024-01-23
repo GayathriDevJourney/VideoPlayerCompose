@@ -1,12 +1,15 @@
 package com.gayathri.videplayercompose.videoplayer
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -220,13 +223,31 @@ class VideoPlayerViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Create Media Item
+     */
     private fun createMediaItem(video: VideoEntity): MediaItem {
         // Build a media item with a media ID.
         with(video.mapToUiModel()) {
             val uri = AppConstant.MEDIA_BASE_URL.plus(source)
-            return MediaItem.Builder().setUri(uri).setMediaId(id.toString())
+            return MediaItem.Builder()
+                .setUri(uri)
+//                .setSubtitleConfigurations(mutableListOf(getSubTitles()))
+                .setMediaId(id.toString())
                 .setTag(video.mapToUiModel()).build()
         }
+    }
+
+
+    private fun getSubTitles(): MediaItem.SubtitleConfiguration {
+        val subtitleUri =
+            "https://raw.githubusercontent.com/andreyvit/subtitle-tools/master/sample.srt"
+        val uri = AppConstant.MEDIA_BASE_URL.plus("subtitle.srt")
+        return MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
+            .setMimeType(MimeTypes.TEXT_VTT)
+            .setLanguage("en")
+            .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+            .build()
     }
 
     fun onAction(playerControlAction: VideoPlayerControlAction) {

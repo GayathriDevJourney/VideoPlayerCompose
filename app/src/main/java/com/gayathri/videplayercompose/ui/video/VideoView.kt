@@ -62,7 +62,8 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
                     it.player = viewModel.player
                     (context as? Activity)?.requestedOrientation =
                         ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                    it.useController = false // default controller disabled
+                    it.useController = true // default controller disabled
+                    it.setShowSubtitleButton(true)
                 }
             }, modifier = Modifier
                 .fillMaxWidth()
@@ -74,7 +75,7 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
                 Log.d("video_player_log", "exo player update ${it.player}")
             }
         )
-        VideoLayout(
+        /*VideoLayout(
             viewModel = viewModel
         )
         DurationController(
@@ -82,7 +83,7 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
             Modifier.align(Alignment.BottomStart),
             onSeekChanged = {
                 viewModel.onAction(VideoPlayerControlAction.OnSeekChanged(it))
-            })
+            })*/
         UpNextEndCard(viewModel = viewModel, Modifier.align(Alignment.BottomStart))
     }
 }

@@ -32,9 +32,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -170,6 +167,10 @@ class VideoPlayerViewModel @Inject constructor(
 
     init {
         _uiState.update { VideoPlayerUiState.Loading }
+        player.trackSelectionParameters.buildUpon()
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+            .setPreferredTextLanguages("en")
+            .build()
         player.prepare()
         addListeners()
     }
@@ -232,19 +233,18 @@ class VideoPlayerViewModel @Inject constructor(
             val uri = AppConstant.MEDIA_BASE_URL.plus(source)
             return MediaItem.Builder()
                 .setUri(uri)
-//                .setSubtitleConfigurations(mutableListOf(getSubTitles()))
+                .setSubtitleConfigurations(listOf(getSubTitles()))
                 .setMediaId(id.toString())
                 .setTag(video.mapToUiModel()).build()
         }
     }
 
-
     private fun getSubTitles(): MediaItem.SubtitleConfiguration {
         val subtitleUri =
-            "https://raw.githubusercontent.com/andreyvit/subtitle-tools/master/sample.srt"
+            "https://gist.githubusercontent.com/samdutton/ca37f3adaf4e23679957b8083e061177/raw/e19399fbccbc069a2af4266e5120ae6bad62699a/sample.vtt"
         val uri = AppConstant.MEDIA_BASE_URL.plus("subtitle.srt")
         return MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
-            .setMimeType(MimeTypes.TEXT_VTT)
+            .setMimeType(MimeTypes.APPLICATION_SUBRIP)
             .setLanguage("en")
             .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
             .build()

@@ -225,6 +225,12 @@ class VideoPlayerViewModel @Inject constructor(
         with(video.mapToUiModel()) {
             val uri = AppConstant.MEDIA_BASE_URL.plus(source)
             return MediaItem.Builder().setUri(uri).setMediaId(id.toString())
+                .setClippingConfiguration(
+                    MediaItem.ClippingConfiguration.Builder()
+                        .setStartPositionMs(600L)
+                        .setEndPositionMs(500000L)
+                        .build()
+                )
                 .setTag(video.mapToUiModel()).build()
         }
     }

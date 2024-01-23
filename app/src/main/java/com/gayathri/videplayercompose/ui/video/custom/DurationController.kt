@@ -15,6 +15,7 @@ import androidx.compose.material.Slider
 import androidx.compose.material.SliderDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,16 +23,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.gayathri.videplayercompose.utils.formatMinSec
+import com.gayathri.videplayercompose.videoplayer.VideoPlayerViewModel
 
 @Composable
 fun DurationController(
+    viewModel: VideoPlayerViewModel,
     modifier: Modifier = Modifier,
-    playerProgressBarDataModel: PlayerProgressBarDataModel,
-    onSeekChanged: (timeMs: Float) -> Unit,
-    onExpand: () -> Unit
+    onSeekChanged: (timeMs: Float) -> Unit
 ) {
-
-    with(playerProgressBarDataModel) {
+    val playerDurationDataModel = viewModel.playerDurationDataModel.collectAsState()
+    with(playerDurationDataModel.value) {
         Column(modifier = modifier) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 // buffer bar
@@ -79,7 +80,9 @@ fun DurationController(
                     modifier = Modifier
                         .padding(5.dp)
                         .size(20.dp),
-                    onClick = onExpand
+                    onClick = {
+                        viewModel.onOrientationChange()
+                    }
                 ) {
                     Image(
                         contentScale = ContentScale.Crop,

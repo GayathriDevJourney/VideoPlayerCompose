@@ -7,9 +7,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -29,9 +29,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,6 +62,12 @@ class VideoPlayerViewModel @Inject constructor(
     private val _orientation = MutableStateFlow<PlayerOrientation>(PlayerOrientation.Portrait)
     val orientation: StateFlow<PlayerOrientation> = _orientation.asStateFlow()
 
+    private val _showUpNextCard = MutableStateFlow(false)
+    val showUpNextCard: StateFlow<Boolean> = _showUpNextCard.asStateFlow()
+
+    private val _showControls = MutableStateFlow(false)
+    val showControls: StateFlow<Boolean> = _showControls.asStateFlow()
+
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlayingValue: Boolean) {
             _isPlaying.value = isPlayingValue
@@ -71,6 +82,7 @@ class VideoPlayerViewModel @Inject constructor(
                     bufferedPercentage = player.bufferedPercentage
                 )
             }
+            createUpNextCard()
             if (
                 events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) ||
                 events.contains(Player.EVENT_PLAY_WHEN_READY_CHANGED)
@@ -114,31 +126,41 @@ class VideoPlayerViewModel @Inject constructor(
             }
         }
 
-        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-            super.onMediaMetadataChanged(mediaMetadata)
-            println("$TAG : mediaMetadata onMediaMetadataChanged")
-        }
-
-        override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
-            super.onPlaylistMetadataChanged(mediaMetadata)
-            println("$TAG : mediaMetadata onPlaylistMetadataChanged")
-        }
-
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             super.onMediaItemTransition(mediaItem, reason)
             println("$TAG : mediaMetadata onMediaItemTransition ${mediaItem?.mediaId} $reason")
-            getCurrentPlayingMetaData(mediaItem)
+            mediaItem?.localConfiguration?.let { localConfiguration ->
+                localConfiguration.tag as? Video
+            }?.also { video ->
+                updateUiForPlayingMediaItem(video)
+            }
+        }
+
+        override fun onTimelineChanged(
+            timeline: Timeline,
+            @Player.TimelineChangeReason reason: Int
+        ) {
+            println("$TAG : onTimelineChanged $reason")
+            if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
+                // Update the UI according to the modified playlist (add, move or remove).
+//                updateUiForPlaylist(timeline)
+                println("$TAG : onTimelineChanged TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED $timeline")
+            }
         }
     }
 
-    private fun getCurrentPlayingMetaData(mediaItem: MediaItem?) {
-        if (::playlistData.isInitialized) {
-            playlistData.find {
-                it.id.toString() == mediaItem?.mediaId
-            }?.let { video ->
-                _uiState.update {
-                    VideoPlayerUiState.Content(video)
-                }
+    private fun updateUiForPlayingMediaItem(video: Video) {
+        _uiState.update {
+            VideoPlayerUiState.Content(video)
+        }
+    }
+
+    private fun createUpNextCard() {
+        val remainingTime =
+            _playerDurationDataModel.value.totalDuration - _playerDurationDataModel.value.currentTime
+        viewModelScope.launch {
+            _showUpNextCard.update {
+                remainingTime in 1..9999
             }
         }
     }
@@ -202,7 +224,8 @@ class VideoPlayerViewModel @Inject constructor(
         // Build a media item with a media ID.
         with(video.mapToUiModel()) {
             val uri = AppConstant.MEDIA_BASE_URL.plus(source)
-            return MediaItem.Builder().setUri(uri).setMediaId(id.toString()).build()
+            return MediaItem.Builder().setUri(uri).setMediaId(id.toString())
+                .setTag(video.mapToUiModel()).build()
         }
     }
 
@@ -233,5 +256,27 @@ class VideoPlayerViewModel @Inject constructor(
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
         player.play()
+    }
+
+    fun setControlsVisibility() {
+        viewModelScope.launch {
+            _showControls.update {
+                _showControls.value.not()
+            }
+        }
+    }
+
+    fun getUpNextItem(): Video? {
+        if (player.hasNextMediaItem()) {
+            println(
+                "player.nextMediaItemIndex ${player.currentMediaItem} ${
+                    Json.encodeToString(
+                        playlistData[player.currentMediaItemIndex]
+                    )
+                }"
+            )
+            return playlistData[player.currentMediaItemIndex]
+        }
+        return null
     }
 }

@@ -248,16 +248,6 @@ class VideoPlayerViewModel @Inject constructor(
         _orientation.update { screenOrientation }
     }
 
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        player.pause()
-    }
-
-    override fun onResume(owner: LifecycleOwner) {
-        super.onResume(owner)
-        player.play()
-    }
-
     fun setControlsVisibility() {
         viewModelScope.launch {
             _showControls.update {
@@ -278,5 +268,29 @@ class VideoPlayerViewModel @Inject constructor(
             return playlistData[player.currentMediaItemIndex]
         }
         return null
+    }
+
+    override fun onStop(owner: LifecycleOwner) {
+        super.onStop(owner)
+        player.pause()
+        player.playWhenReady = false
+    }
+
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        player.play()
+        player.playWhenReady = true
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        super.onPause(owner)
+        player.pause()
+        player.playWhenReady = false
+    }
+
+    override fun onDestroy(owner: LifecycleOwner) {
+        super.onDestroy(owner)
+        player.stop()
+        player.clearMediaItems()
     }
 }

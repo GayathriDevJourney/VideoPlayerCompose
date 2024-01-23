@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,40 +27,41 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.gayathri.videplayercompose.ui.video.custom.state.PlayerControllerState
 import com.gayathri.videplayercompose.ui.video.custom.state.PlayerState
+import com.gayathri.videplayercompose.videoplayer.VideoPlayerViewModel
 
 @Composable
 fun VideoLayout(
-    state: PlayerControllerState,
-    action: (VideoPlayerControlAction) -> Unit
+    viewModel: VideoPlayerViewModel
 ) {
-    with(state) {
-        AnimatedVisibility(
-            visible = showControls,
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(200))
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PlayerIcon(icon = Icons.Rounded.FastRewind) {
-                        action(VideoPlayerControlAction.OnRewind)
+    val isPlaying = viewModel.isPlaying.collectAsState().value
+    val playerState = viewModel.playerState.collectAsState().value
+    val showControls = viewModel.showControls.collectAsState().value
+    AnimatedVisibility(
+        visible = showControls,
+        enter = fadeIn(tween(200)),
+        exit = fadeOut(tween(200))
+    ) {
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                PlayerIcon(icon = Icons.Rounded.FastRewind) {
+                    viewModel.onAction(VideoPlayerControlAction.OnRewind)
+                }
+                when (playerState) {
+                    PlayerState.BUFFERING -> CircularProgressIndicator()
+                    else -> PlayerIcon(
+                        icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayCircle
+                    ) {
+                        viewModel.onAction(if (isPlaying) VideoPlayerControlAction.OnPause else VideoPlayerControlAction.OnPlay)
                     }
-                    when (playerState) {
-                        PlayerState.BUFFERING -> CircularProgressIndicator()
-                        else -> PlayerIcon(
-                            icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayCircle
-                        ) {
-                            action(if (isPlaying) VideoPlayerControlAction.OnPause else VideoPlayerControlAction.OnPlay)
-                        }
-                    }
+                }
 
-                    PlayerIcon(icon = Icons.Rounded.FastForward) {
-                        action(VideoPlayerControlAction.OnForward)
-                    }
+                PlayerIcon(icon = Icons.Rounded.FastForward) {
+                    viewModel.onAction(VideoPlayerControlAction.OnForward)
                 }
             }
         }

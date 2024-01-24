@@ -13,6 +13,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -107,7 +108,7 @@ class VideoPlayerViewModel @Inject constructor(
 
         override fun onPlayerError(error: PlaybackException) {
             super.onPlayerError(error)
-            println("$TAG : error ${error.message}")
+            println("$TAG : onPlayerError ${error.message}")
             val cause = error.cause
             if (cause is HttpDataSource.HttpDataSourceException) {
                 println("$TAG : error HttpDataSourceException")
@@ -145,6 +146,25 @@ class VideoPlayerViewModel @Inject constructor(
                 // Update the UI according to the modified playlist (add, move or remove).
 //                updateUiForPlaylist(timeline)
                 println("$TAG : onTimelineChanged TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED $timeline")
+            }
+        }
+
+        override fun onTracksChanged(tracks: Tracks) {
+            super.onTracksChanged(tracks)
+            println("$TAG : onTracksChanged $tracks")
+            for (trackGroup in tracks.groups) {
+                // Group level information.
+                val trackType = trackGroup.type
+                val trackInGroupIsSelected = trackGroup.isSelected
+                val trackInGroupIsSupported = trackGroup.isSupported
+                println("$TAG : onTracksChanged Group level information --------> trackType $trackType trackInGroupIsSelected $trackInGroupIsSelected trackInGroupIsSupported $trackInGroupIsSupported")
+                for (i in 0 until trackGroup.length) {
+                    // Individual track information.
+                    val isSupported = trackGroup.isTrackSupported(i)
+                    val isSelected = trackGroup.isTrackSelected(i)
+                    val trackFormat = trackGroup.getTrackFormat(i)
+                    println("$TAG : onTracksChanged  Individual track information --------> isSupported $isSupported isSelected $isSelected trackFormat ${trackFormat.sampleMimeType} ${trackFormat.codecs}")
+                }
             }
         }
     }
@@ -192,7 +212,8 @@ class VideoPlayerViewModel @Inject constructor(
         videoId?.let {
             viewModelScope.launch {
                 val video = videoDatabase.videoDao().getVideo(videoId)
-                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
+//                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
+                player.setMediaItem(createMediaItem(video))
                 player.play()
                 _uiState.update {
                     VideoPlayerUiState.Content(video.mapToUiModel())
@@ -233,16 +254,17 @@ class VideoPlayerViewModel @Inject constructor(
             val uri = AppConstant.MEDIA_BASE_URL.plus(source)
             return MediaItem.Builder()
                 .setUri(uri)
-                .setSubtitleConfigurations(listOf(getSubTitles()))
                 .setMediaId(id.toString())
-                .setTag(video.mapToUiModel()).build()
+                .setSubtitleConfigurations(listOf(getSubTitles()))
+                .setTag(video.mapToUiModel())
+                .build()
         }
     }
 
     private fun getSubTitles(): MediaItem.SubtitleConfiguration {
         val subtitleUri =
-            "https://gist.githubusercontent.com/samdutton/ca37f3adaf4e23679957b8083e061177/raw/e19399fbccbc069a2af4266e5120ae6bad62699a/sample.vtt"
-        val uri = AppConstant.MEDIA_BASE_URL.plus("subtitle.srt")
+            " https://raw.githubusercontent.com/brenopolanski/html5-video-webvtt-example/master/MIB2-subtitles-pt-BR.vtt"
+        val uri = AppConstant.BASE_URL.plus("subtitle.srt")
         return MediaItem.SubtitleConfiguration.Builder(Uri.parse(uri))
             .setMimeType(MimeTypes.APPLICATION_SUBRIP)
             .setLanguage("en")

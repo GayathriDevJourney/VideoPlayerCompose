@@ -2,15 +2,12 @@ package com.gayathri.videplayercompose.ui.video
 
 import android.os.Bundle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.gayathri.videplayercompose.home.ObserveLifecycleEvents
 import com.gayathri.videplayercompose.videoplayer.VideoPlayerViewModel
 

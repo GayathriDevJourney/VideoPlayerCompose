@@ -73,9 +73,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Player
-    implementation("androidx.media3:media3-exoplayer:1.2.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.2.0")
-    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.ui)
 
     //Icons
     implementation("androidx.compose.material:material-icons-extended:1.5.4")

@@ -2,12 +2,18 @@ package com.gayathri.videplayercompose.di
 
 import android.app.Application
 import android.content.Context
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.gayathri.ktor_client.remote.ApiImpl
+import com.gayathri.videplayercompose.IPlayListProvider
+import com.gayathri.videplayercompose.PlayListProvider
 import com.gayathri.videplayercompose.data.MetaDataReader
 import com.gayathri.videplayercompose.data.MetaDataReaderImpl
 import com.gayathri.videplayercompose.data.local.VideoDatabase
 import com.gayathri.videplayercompose.data.repository.MovieRepository
+import com.gayathri.videplayercompose.media.IMediaSourceFactoryProvider
+import com.gayathri.videplayercompose.media.IMediaSourceProvider
+import com.gayathri.videplayercompose.media.MediaSourceFactoryProvider
+import com.gayathri.videplayercompose.media.MediaSourceProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,8 +28,16 @@ import javax.inject.Singleton
 object VideoPlayerModule {
     @Provides
     @ViewModelScoped
-    fun provideVideoPlayer(app: Application): ExoPlayer {
-        return ExoPlayer.Builder(app).build()
+    fun provideVideoPlayer(
+        app: Application,
+        @ApplicationContext context: Context,
+        mediaSourceFactoryProvider: IMediaSourceFactoryProvider
+    ): ExoPlayer {
+        return ExoPlayer.Builder(app)
+//            .setMediaSourceFactory(
+//                DefaultMediaSourceFactory(context).setDataSourceFactory(mediaSourceProvider.getCacheDataSource())
+//            )
+            .build()
     }
 
     @Provides
@@ -34,8 +48,8 @@ object VideoPlayerModule {
 
     @Provides
     @ViewModelScoped
-    fun provideMovieRepository(): MovieRepository {
-        return MovieRepository()
+    fun provideMovieRepository(apiImpl: ApiImpl): MovieRepository {
+        return MovieRepository(apiImpl)
     }
 
     /*@Provides
@@ -59,5 +73,34 @@ class DatabaseModule {
     @Provides
     fun provideVideoDatabase(@ApplicationContext appContext: Context): VideoDatabase {
         return VideoDatabase.getInstance(appContext)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+class MediaSourceModule {
+    @Provides
+    @Singleton
+    fun providesMediaSourceFactoryProvider(@ApplicationContext context: Context): IMediaSourceFactoryProvider {
+        return MediaSourceFactoryProvider(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providesMediaSourceProvider(mediaSourceFactoryProvider: IMediaSourceFactoryProvider): IMediaSourceProvider {
+        return MediaSourceProvider(mediaSourceFactoryProvider)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+class MediaDataModule {
+    @Provides
+    @Singleton
+    fun providesPlayListProvider(
+        mediaSourceProvider: IMediaSourceProvider,
+        videoDatabase: VideoDatabase
+    ): IPlayListProvider {
+        return PlayListProvider(videoDatabase, mediaSourceProvider)
     }
 }

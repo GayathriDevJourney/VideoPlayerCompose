@@ -17,3 +17,4 @@ dependencyResolutionManagement {
 rootProject.name = "VidePlayerCompose"
 include(":app")
 include(":ktor-client")
+include(":download-media-service")

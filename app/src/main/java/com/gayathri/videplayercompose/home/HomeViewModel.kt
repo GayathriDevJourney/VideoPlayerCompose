@@ -25,10 +25,10 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val videoDatabase: VideoDatabase,
+    private val repo: MovieRepository
 ) : ViewModel(), DefaultLifecycleObserver {
 
     var scrollIndex: Int = 0
-    private val repo: MovieRepository = MovieRepository()
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()

@@ -10,14 +10,15 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import com.gayathri.download_media_service.DownloadRequestBuilder
+import com.gayathri.download_media_service.model.DownloadVideo
 import com.gayathri.ktor_client.AppConstant
 import com.gayathri.ktor_client.model.Video
-import com.gayathri.videplayercompose.data.local.VideoDatabase
-import com.gayathri.videplayercompose.data.local.VideoEntity
-import com.gayathri.videplayercompose.data.local.mapToUiModel
+import com.gayathri.videplayercompose.IPlayListProvider
 import com.gayathri.videplayercompose.ui.video.VideoPlayerUiState
 import com.gayathri.videplayercompose.ui.video.custom.PlayerProgressBarDataModel
 import com.gayathri.videplayercompose.ui.video.custom.VideoPlayerControlAction
@@ -36,10 +37,12 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+@OptIn(UnstableApi::class)
 @HiltViewModel
 class VideoPlayerViewModel @Inject constructor(
     val player: ExoPlayer,
-    private val videoDatabase: VideoDatabase,
+    private val downloadRequestBuilder: DownloadRequestBuilder,
+    private val playListProvider: IPlayListProvider
 ) : ViewModel(), DefaultLifecycleObserver {
 
     private lateinit var playlistData: List<Video>
@@ -129,7 +132,15 @@ class VideoPlayerViewModel @Inject constructor(
             mediaItem?.localConfiguration?.let { localConfiguration ->
                 localConfiguration.tag as? Video
             }?.also { video ->
+                println("$TAG : mediaMetadata onMediaItemTransition ${video.title}")
+//                downloadRequestBuilder.downloadMedia(video)
                 updateUiForPlayingMediaItem(video)
+                downloadRequestBuilder.downloadMedia(
+                    DownloadVideo(
+                        id = video.id.toString(),
+                        url = AppConstant.MEDIA_BASE_URL.plus(video.source)
+                    )
+                )
             }
         }
 
@@ -181,44 +192,22 @@ class VideoPlayerViewModel @Inject constructor(
 
 
     fun setVideo(extras: Bundle?) {
-        val videoId = extras?.getInt("videoId")
-        videoId?.let {
+        extras?.getInt("videoId")?.let {
+            Log.d("video_player_log", "$it")
             viewModelScope.launch {
-                val video = videoDatabase.videoDao().getVideo(videoId)
-                createPlaylist(video)
+                createPlaylist(it)
             }
         }
     }
 
-    private fun createPlaylist(video: VideoEntity) {
+    private fun createPlaylist(videoId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            val playlistMediaItem = mutableListOf<MediaItem>()
-            playlistMediaItem.add(createMediaItem(video))
-            val mediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id > video.id
-            }.map {
-                playlistMediaItem.add(createMediaItem(it))
-                it.mapToUiModel()
-            }
-            val prevMediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id < video.id
-            }.map {
-                playlistMediaItem.add(createMediaItem(it))
-                it.mapToUiModel()
-            }
+            val playlistMediaSources = playListProvider.createPlayList(videoId)
             withContext(Dispatchers.Main) {
-                player.addMediaItems(playlistMediaItem)
+                player.setMediaSources(playlistMediaSources)
+                player.prepare()
             }
-            playlistData = mediaItems.plus(prevMediaItems)
-        }
-    }
-
-    private fun createMediaItem(video: VideoEntity): MediaItem {
-        // Build a media item with a media ID.
-        with(video.mapToUiModel()) {
-            val uri = AppConstant.MEDIA_BASE_URL.plus(source)
-            return MediaItem.Builder().setUri(uri).setMediaId(id.toString())
-                .setTag(video.mapToUiModel()).build()
+            playlistData = playListProvider.getPlaylistData()
         }
     }
 

@@ -15,7 +15,6 @@ import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
 @Singleton
 class TerminalStateNotificationHelper @Inject constructor(
     val context: Context,

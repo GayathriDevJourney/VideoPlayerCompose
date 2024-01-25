@@ -1,34 +1,33 @@
 package com.gayathri.videplayercompose.media
 
-import android.content.Context
 import androidx.annotation.OptIn
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.DataSource
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.cache.CacheDataSource
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import com.gayathri.videplayercompose.download.VideoDownloadUtil
-import com.gayathri.videplayercompose.download.VideoDownloadUtil.getDownloadCache
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import com.gayathri.ktor_client.AppConstant
+import com.gayathri.videplayercompose.data.local.VideoEntity
+import com.gayathri.videplayercompose.data.local.mapToUiModel
 import javax.inject.Inject
 
-@OptIn(UnstableApi::class)
-class MediaSourceProvider @Inject constructor(private val context: Context) {
-
-    fun getCacheDataSource(): DataSource.Factory {
-        // Create a read-only cache data source factory using the download cache.
-        val cacheDataSourceFactory: DataSource.Factory =
-            CacheDataSource.Factory()
-                .setCache(getDownloadCache(context))
-                .setUpstreamDataSourceFactory(VideoDownloadUtil.getHttpDataSourceFactory(context))
-                .setCacheWriteDataSinkFactory(null) // Disable writing.
-
-        val player = ExoPlayer.Builder(context)
-            .setMediaSourceFactory(
-                DefaultMediaSourceFactory(context).setDataSourceFactory(cacheDataSourceFactory)
-            ).build()
-        return cacheDataSourceFactory
+class MediaSourceProvider @Inject constructor(
+    private val mediaSourceFactoryProvider: IMediaSourceFactoryProvider,
+) : IMediaSourceProvider {
+    @OptIn(UnstableApi::class)
+    override fun createMediaSources(video: VideoEntity): ProgressiveMediaSource {
+        return ProgressiveMediaSource.Factory(mediaSourceFactoryProvider.getMediaSourceFactory())
+            .createMediaSource(createMediaItem(video))
     }
 
-    fun getMediaSourceFactory(): DataSource.Factory = DefaultDataSource.Factory(context)
+    private fun createMediaItem(video: VideoEntity): MediaItem {
+        // Build a media item with a media ID.
+        with(video.mapToUiModel()) {
+            val uri = AppConstant.MEDIA_BASE_URL.plus(source)
+            return MediaItem.Builder().setUri(uri).setMediaId(id.toString())
+                .setTag(video.mapToUiModel()).build()
+        }
+    }
+}
+
+interface IMediaSourceProvider {
+    fun createMediaSources(video: VideoEntity): ProgressiveMediaSource
 }

@@ -10,14 +10,19 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.MediaSource
+import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import com.gayathri.ktor_client.AppConstant
 import com.gayathri.ktor_client.model.Video
 import com.gayathri.videplayercompose.data.local.VideoDatabase
 import com.gayathri.videplayercompose.data.local.VideoEntity
 import com.gayathri.videplayercompose.data.local.mapToUiModel
+import com.gayathri.videplayercompose.download.DownloadRequestBuilder
+import com.gayathri.videplayercompose.media.MediaSourceProvider
 import com.gayathri.videplayercompose.ui.video.VideoPlayerUiState
 import com.gayathri.videplayercompose.ui.video.custom.PlayerProgressBarDataModel
 import com.gayathri.videplayercompose.ui.video.custom.VideoPlayerControlAction
@@ -29,9 +34,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,10 +41,13 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+@OptIn(UnstableApi::class)
 @HiltViewModel
 class VideoPlayerViewModel @Inject constructor(
     val player: ExoPlayer,
     private val videoDatabase: VideoDatabase,
+    private val downloadRequestBuilder: DownloadRequestBuilder,
+    private val mediaSourceProvider: MediaSourceProvider
 ) : ViewModel(), DefaultLifecycleObserver {
 
     private lateinit var playlistData: List<Video>
@@ -132,7 +137,10 @@ class VideoPlayerViewModel @Inject constructor(
             mediaItem?.localConfiguration?.let { localConfiguration ->
                 localConfiguration.tag as? Video
             }?.also { video ->
+                println("$TAG : mediaMetadata onMediaItemTransition ${video.title}")
+//                downloadRequestBuilder.downloadMedia(video)
                 updateUiForPlayingMediaItem(video)
+                downloadRequestBuilder.downloadMedia(video)
             }
         }
 
@@ -185,36 +193,39 @@ class VideoPlayerViewModel @Inject constructor(
 
     fun setVideo(extras: Bundle?) {
         val videoId = extras?.getInt("videoId")
+        Log.d("video_player_log", "$videoId")
         videoId?.let {
             viewModelScope.launch {
                 val video = videoDatabase.videoDao().getVideo(videoId)
-                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
-                player.play()
-                _uiState.update {
-                    VideoPlayerUiState.Content(video.mapToUiModel())
-                }
+                createPlaylist(video)
             }
-            createPlaylist(videoId)
         }
     }
 
-    private fun createPlaylist(videoId: Int) {
+    private fun createMediaSources(video: VideoEntity): ProgressiveMediaSource {
+        return ProgressiveMediaSource.Factory(mediaSourceProvider.getMediaSourceFactory())
+            .createMediaSource(createMediaItem(video))
+    }
+
+    private fun createPlaylist(video: VideoEntity) {
         viewModelScope.launch(Dispatchers.IO) {
-            val playlistMediaItem = mutableListOf<MediaItem>()
+            val playlistMediaSources = mutableListOf<MediaSource>()
+            playlistMediaSources.add(createMediaSources(video))
             val mediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id > videoId
+                it.id > video.id
             }.map {
-                playlistMediaItem.add(createMediaItem(it))
+                playlistMediaSources.add(createMediaSources(it))
                 it.mapToUiModel()
             }
             val prevMediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id < videoId
+                it.id < video.id
             }.map {
-                playlistMediaItem.add(createMediaItem(it))
+                playlistMediaSources.add(createMediaSources(it))
                 it.mapToUiModel()
             }
             withContext(Dispatchers.Main) {
-                player.addMediaItems(playlistMediaItem)
+                player.setMediaSources(playlistMediaSources)
+                player.prepare()
             }
             playlistData = mediaItems.plus(prevMediaItems)
         }

@@ -188,7 +188,8 @@ class VideoPlayerViewModel @Inject constructor(
         videoId?.let {
             viewModelScope.launch {
                 val video = videoDatabase.videoDao().getVideo(videoId)
-                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
+//                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
+                player.setMediaItem(createMediaItem(video))
                 player.play()
                 _uiState.update {
                     VideoPlayerUiState.Content(video.mapToUiModel())

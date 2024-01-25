@@ -3,13 +3,17 @@ package com.gayathri.videplayercompose.di
 import android.app.Application
 import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.gayathri.ktor_client.remote.ApiImpl
+import com.gayathri.videplayercompose.IPlayListProvider
+import com.gayathri.videplayercompose.PlayListProvider
 import com.gayathri.videplayercompose.data.MetaDataReader
 import com.gayathri.videplayercompose.data.MetaDataReaderImpl
 import com.gayathri.videplayercompose.data.local.VideoDatabase
 import com.gayathri.videplayercompose.data.repository.MovieRepository
 import com.gayathri.videplayercompose.download.DownloadRequestBuilder
+import com.gayathri.videplayercompose.media.IMediaSourceFactoryProvider
+import com.gayathri.videplayercompose.media.IMediaSourceProvider
+import com.gayathri.videplayercompose.media.MediaSourceFactoryProvider
 import com.gayathri.videplayercompose.media.MediaSourceProvider
 import dagger.Module
 import dagger.Provides
@@ -28,7 +32,7 @@ object VideoPlayerModule {
     fun provideVideoPlayer(
         app: Application,
         @ApplicationContext context: Context,
-        mediaSourceProvider: MediaSourceProvider
+        mediaSourceFactoryProvider: IMediaSourceFactoryProvider
     ): ExoPlayer {
         return ExoPlayer.Builder(app)
 //            .setMediaSourceFactory(
@@ -78,13 +82,32 @@ class DatabaseModule {
 class MediaSourceModule {
     @Provides
     @Singleton
-    fun providesMediaSourceProvider(@ApplicationContext context: Context): MediaSourceProvider {
-        return MediaSourceProvider(context)
+    fun providesMediaSourceFactoryProvider(@ApplicationContext context: Context): IMediaSourceFactoryProvider {
+        return MediaSourceFactoryProvider(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providesMediaSourceProvider(mediaSourceFactoryProvider: IMediaSourceFactoryProvider): IMediaSourceProvider {
+        return MediaSourceProvider(mediaSourceFactoryProvider)
     }
 
     @Provides
     @Singleton
     fun provideDownloadRequestBuilder(@ApplicationContext context: Context): DownloadRequestBuilder {
         return DownloadRequestBuilder(context)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+class MediaDataModule {
+    @Provides
+    @Singleton
+    fun providesPlayListProvider(
+        mediaSourceProvider: IMediaSourceProvider,
+        videoDatabase: VideoDatabase
+    ): IPlayListProvider {
+        return PlayListProvider(videoDatabase, mediaSourceProvider)
     }
 }

@@ -31,7 +31,10 @@ class VideoDownloadService : DownloadService(
                 this, downloadNotificationHelper, FOREGROUND_NOTIFICATION_ID + 1
             )
         )
-        Log.d("download_manager_log", "getDownloadManager getDownloads ${downloadManager.currentDownloads}")
+        Log.d(
+            "download_manager_log",
+            "getDownloadManager getDownloads ${downloadManager.currentDownloads}"
+        )
         return downloadManager
     }
 

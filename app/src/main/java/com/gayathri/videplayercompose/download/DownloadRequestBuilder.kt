@@ -27,5 +27,4 @@ class DownloadRequestBuilder @Inject constructor(val context: Context) {
             /* foreground= */ false
         )
     }
-
 }

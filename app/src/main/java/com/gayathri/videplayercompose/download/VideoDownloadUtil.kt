@@ -23,7 +23,6 @@ import java.net.CookieManager
 import java.net.CookiePolicy
 import java.util.concurrent.Executors
 
-
 @OptIn(UnstableApi::class)
 object VideoDownloadUtil {
     const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel";

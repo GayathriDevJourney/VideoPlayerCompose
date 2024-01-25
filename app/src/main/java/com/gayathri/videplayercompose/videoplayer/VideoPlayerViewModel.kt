@@ -29,9 +29,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -188,28 +185,23 @@ class VideoPlayerViewModel @Inject constructor(
         videoId?.let {
             viewModelScope.launch {
                 val video = videoDatabase.videoDao().getVideo(videoId)
-//                player.setMediaItem(MediaItem.fromUri(AppConstant.MEDIA_BASE_URL.plus(video.source)))
-                player.setMediaItem(createMediaItem(video))
-                player.play()
-                _uiState.update {
-                    VideoPlayerUiState.Content(video.mapToUiModel())
-                }
+                createPlaylist(video)
             }
-            createPlaylist(videoId)
         }
     }
 
-    private fun createPlaylist(videoId: Int) {
+    private fun createPlaylist(video: VideoEntity) {
         viewModelScope.launch(Dispatchers.IO) {
             val playlistMediaItem = mutableListOf<MediaItem>()
+            playlistMediaItem.add(createMediaItem(video))
             val mediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id > videoId
+                it.id > video.id
             }.map {
                 playlistMediaItem.add(createMediaItem(it))
                 it.mapToUiModel()
             }
             val prevMediaItems = videoDatabase.videoDao().getVideos().filter {
-                it.id < videoId
+                it.id < video.id
             }.map {
                 playlistMediaItem.add(createMediaItem(it))
                 it.mapToUiModel()

@@ -31,7 +31,7 @@
             android:configChanges="orientation|screenSize|layoutDirection" />
 
         <service
-            android:name=".download.VideoDownloadService"
+            android:name="com.gayathri.download_media_service.VideoDownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync">
             <intent-filter>

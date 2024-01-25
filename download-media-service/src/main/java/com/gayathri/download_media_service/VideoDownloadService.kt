@@ -1,4 +1,4 @@
-package com.gayathri.videplayercompose.download
+package com.gayathri.download_media_service
 
 import android.app.Notification
 import androidx.media3.common.util.Log
@@ -9,12 +9,11 @@ import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.scheduler.PlatformScheduler
 import androidx.media3.exoplayer.scheduler.Scheduler
-import com.gayathri.videplayercompose.R
 
 
 private const val JOB_ID = 1
 private const val FOREGROUND_NOTIFICATION_ID = 1
-private const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel";
+private const val DOWNLOAD_NOTIFICATION_CHANNEL_ID = "download_channel"
 
 @UnstableApi
 class VideoDownloadService : DownloadService(

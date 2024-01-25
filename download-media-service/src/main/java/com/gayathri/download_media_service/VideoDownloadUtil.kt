@@ -1,4 +1,4 @@
-package com.gayathri.videplayercompose.download
+package com.gayathri.download_media_service
 
 import android.content.Context
 import androidx.annotation.Nullable

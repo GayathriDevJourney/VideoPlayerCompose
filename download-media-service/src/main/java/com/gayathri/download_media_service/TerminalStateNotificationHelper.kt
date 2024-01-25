@@ -1,4 +1,4 @@
-package com.gayathri.videplayercompose.download
+package com.gayathri.download_media_service
 
 import android.app.Notification
 import android.content.Context
@@ -10,7 +10,6 @@ import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
-import com.gayathri.videplayercompose.R
 import java.lang.Exception
 import javax.inject.Inject
 import javax.inject.Singleton

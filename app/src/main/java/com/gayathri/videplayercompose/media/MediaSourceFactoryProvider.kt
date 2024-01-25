@@ -8,8 +8,8 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import com.gayathri.videplayercompose.download.VideoDownloadUtil
-import com.gayathri.videplayercompose.download.VideoDownloadUtil.getDownloadCache
+import com.gayathri.download_media_service.VideoDownloadUtil
+import com.gayathri.download_media_service.VideoDownloadUtil.getDownloadCache
 import javax.inject.Inject
 
 @OptIn(UnstableApi::class)

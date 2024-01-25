@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">VidePlayerCompose</string>
+    <string name="exo_download_notification_channel_name">Downloads</string>
+</resources>

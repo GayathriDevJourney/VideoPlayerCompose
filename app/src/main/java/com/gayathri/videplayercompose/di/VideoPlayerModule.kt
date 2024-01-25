@@ -10,7 +10,6 @@ import com.gayathri.videplayercompose.data.MetaDataReader
 import com.gayathri.videplayercompose.data.MetaDataReaderImpl
 import com.gayathri.videplayercompose.data.local.VideoDatabase
 import com.gayathri.videplayercompose.data.repository.MovieRepository
-import com.gayathri.videplayercompose.download.DownloadRequestBuilder
 import com.gayathri.videplayercompose.media.IMediaSourceFactoryProvider
 import com.gayathri.videplayercompose.media.IMediaSourceProvider
 import com.gayathri.videplayercompose.media.MediaSourceFactoryProvider
@@ -90,12 +89,6 @@ class MediaSourceModule {
     @Singleton
     fun providesMediaSourceProvider(mediaSourceFactoryProvider: IMediaSourceFactoryProvider): IMediaSourceProvider {
         return MediaSourceProvider(mediaSourceFactoryProvider)
-    }
-
-    @Provides
-    @Singleton
-    fun provideDownloadRequestBuilder(@ApplicationContext context: Context): DownloadRequestBuilder {
-        return DownloadRequestBuilder(context)
     }
 }
 

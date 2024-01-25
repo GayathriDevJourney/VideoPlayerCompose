@@ -14,7 +14,7 @@ class MediaSourceProvider @Inject constructor(
 ) : IMediaSourceProvider {
     @OptIn(UnstableApi::class)
     override fun createMediaSources(video: VideoEntity): ProgressiveMediaSource {
-        return ProgressiveMediaSource.Factory(mediaSourceFactoryProvider.getMediaSourceFactory())
+        return ProgressiveMediaSource.Factory(mediaSourceFactoryProvider.getCacheDataSource())
             .createMediaSource(createMediaItem(video))
     }
 

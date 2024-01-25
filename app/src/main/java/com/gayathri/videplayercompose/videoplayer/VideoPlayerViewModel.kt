@@ -14,9 +14,11 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import com.gayathri.download_media_service.DownloadRequestBuilder
+import com.gayathri.download_media_service.model.DownloadVideo
+import com.gayathri.ktor_client.AppConstant
 import com.gayathri.ktor_client.model.Video
 import com.gayathri.videplayercompose.IPlayListProvider
-import com.gayathri.videplayercompose.download.DownloadRequestBuilder
 import com.gayathri.videplayercompose.ui.video.VideoPlayerUiState
 import com.gayathri.videplayercompose.ui.video.custom.PlayerProgressBarDataModel
 import com.gayathri.videplayercompose.ui.video.custom.VideoPlayerControlAction
@@ -133,7 +135,12 @@ class VideoPlayerViewModel @Inject constructor(
                 println("$TAG : mediaMetadata onMediaItemTransition ${video.title}")
 //                downloadRequestBuilder.downloadMedia(video)
                 updateUiForPlayingMediaItem(video)
-                downloadRequestBuilder.downloadMedia(video)
+                downloadRequestBuilder.downloadMedia(
+                    DownloadVideo(
+                        id = video.id.toString(),
+                        url = AppConstant.MEDIA_BASE_URL.plus(video.source)
+                    )
+                )
             }
         }
 

@@ -63,7 +63,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation(project(":ktor-client"))
     implementation(libs.cronet.api)
     implementation(libs.androidx.media3.datasource.cronet)
     testImplementation("junit:junit:4.13.2")
@@ -108,6 +107,9 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.room.runtime)
     kapt(libs.room.compiler)
+
+    implementation(project(":ktor-client"))
+    implementation(project(":download-media-service"))
 
 }
 

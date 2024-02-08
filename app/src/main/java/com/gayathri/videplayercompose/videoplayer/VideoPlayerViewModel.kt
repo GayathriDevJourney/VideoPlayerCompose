@@ -1,5 +1,6 @@
 package com.gayathri.videplayercompose.videoplayer
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -14,11 +15,18 @@ import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
+import androidx.media3.exoplayer.analytics.PlaybackStats
+import androidx.media3.exoplayer.analytics.PlaybackStatsListener
+import androidx.media3.ui.PlayerView
 import com.gayathri.download_media_service.DownloadRequestBuilder
 import com.gayathri.download_media_service.model.DownloadVideo
 import com.gayathri.ktor_client.AppConstant
 import com.gayathri.ktor_client.model.Video
 import com.gayathri.videplayercompose.IPlayListProvider
+import com.gayathri.videplayercompose.data.local.VideoEntity
+import com.gayathri.videplayercompose.data.local.mapToUiModel
+import com.gayathri.videplayercompose.media.MediaSourceProvider
 import com.gayathri.videplayercompose.ui.video.VideoPlayerUiState
 import com.gayathri.videplayercompose.ui.video.custom.PlayerProgressBarDataModel
 import com.gayathri.videplayercompose.ui.video.custom.VideoPlayerControlAction
@@ -42,7 +50,8 @@ import javax.inject.Inject
 class VideoPlayerViewModel @Inject constructor(
     val player: ExoPlayer,
     private val downloadRequestBuilder: DownloadRequestBuilder,
-    private val playListProvider: IPlayListProvider
+    private val playListProvider: IPlayListProvider,
+    val playerView: PlayerView
 ) : ViewModel(), DefaultLifecycleObserver {
 
     private lateinit var playlistData: List<Video>
@@ -204,11 +213,22 @@ class VideoPlayerViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val playlistMediaSources = playListProvider.createPlayList(videoId)
             withContext(Dispatchers.Main) {
+//                player.setMediaItem(createMediaItem(videoId.toString()))
                 player.setMediaSources(playlistMediaSources)
                 player.prepare()
             }
             playlistData = playListProvider.getPlaylistData()
         }
+    }
+
+    private fun createMediaItem(source: String): MediaItem {
+        // Build a media item with a media ID.
+        val uri = AppConstant.MEDIA_BASE_URL.plus(source)
+        return MediaItem.Builder().setUri(uri).setMediaId(source)
+            .setAdsConfiguration(
+                MediaItem.AdsConfiguration.Builder(Uri.parse(MediaSourceProvider.SAMPLE_VAST_TAG_URL))
+                    .build()
+            ).build()
     }
 
     fun onAction(playerControlAction: VideoPlayerControlAction) {

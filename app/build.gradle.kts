@@ -74,9 +74,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Player
-    implementation("androidx.media3:media3-exoplayer:1.2.0")
-    implementation("androidx.media3:media3-exoplayer-dash:1.2.0")
-    implementation("androidx.media3:media3-ui:1.2.0")
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.exoplayer.dash)
+    implementation(libs.media3.ui)
 
     //Icons
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
@@ -110,6 +110,7 @@ dependencies {
 
     implementation(project(":ktor-client"))
     implementation(project(":download-media-service"))
+    implementation(libs.media3.exoplayer.ima)
 
 }
 

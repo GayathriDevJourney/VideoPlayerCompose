@@ -58,7 +58,7 @@ fun VideoView(viewModel: VideoPlayerViewModel) {
 
         AndroidView(
             factory = { context ->
-                PlayerView(context).also {
+                viewModel.playerView.also {
                     it.player = viewModel.player
                     (context as? Activity)?.requestedOrientation =
                         ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED

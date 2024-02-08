@@ -3,9 +3,14 @@ package com.gayathri.videplayercompose.di
 import android.app.Application
 import android.content.Context
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.ads.AdsLoader
+import androidx.media3.ui.PlayerView
 import com.gayathri.ktor_client.remote.ApiImpl
 import com.gayathri.videplayercompose.IPlayListProvider
 import com.gayathri.videplayercompose.PlayListProvider
+import com.gayathri.videplayercompose.ads.AdsLoaderProvider
+import com.gayathri.videplayercompose.ads.AdsLoaderProviderNew
 import com.gayathri.videplayercompose.data.MetaDataReader
 import com.gayathri.videplayercompose.data.MetaDataReaderImpl
 import com.gayathri.videplayercompose.data.local.VideoDatabase
@@ -29,14 +34,20 @@ object VideoPlayerModule {
     @Provides
     @ViewModelScoped
     fun provideVideoPlayer(
-        app: Application,
         @ApplicationContext context: Context,
-        mediaSourceFactoryProvider: IMediaSourceFactoryProvider
+        mediaSourceFactoryProvider: IMediaSourceFactoryProvider,
+        playerView: PlayerView
     ): ExoPlayer {
-        return ExoPlayer.Builder(app)
-//            .setMediaSourceFactory(
-//                DefaultMediaSourceFactory(context).setDataSourceFactory(mediaSourceProvider.getCacheDataSource())
-//            )
+        val player = ExoPlayer.Builder(context)
+        val adsLoaderProvider = AdsLoaderProviderNew(context, player.build())
+        val mediaSource = DefaultMediaSourceFactory(context).setLocalAdInsertionComponents(
+            adsLoaderProvider,
+            playerView
+        )
+        return player
+            .setMediaSourceFactory(
+                mediaSource
+            )
             .build()
     }
 
@@ -63,6 +74,11 @@ object VideoPlayerModule {
         return VideoDatabase.getInstance(context)
     }*/
 
+    @Provides
+    @ViewModelScoped
+    fun providePlayerView(@ApplicationContext context: Context): PlayerView {
+        return PlayerView(context)
+    }
 }
 
 @Module
@@ -81,8 +97,11 @@ class DatabaseModule {
 class MediaSourceModule {
     @Provides
     @Singleton
-    fun providesMediaSourceFactoryProvider(@ApplicationContext context: Context): IMediaSourceFactoryProvider {
-        return MediaSourceFactoryProvider(context)
+    fun providesMediaSourceFactoryProvider(
+        @ApplicationContext context: Context,
+        adsLoaderProvider: AdsLoader.Provider
+    ): IMediaSourceFactoryProvider {
+        return MediaSourceFactoryProvider(context, adsLoaderProvider)
     }
 
     @Provides
@@ -102,5 +121,17 @@ class MediaDataModule {
         videoDatabase: VideoDatabase
     ): IPlayListProvider {
         return PlayListProvider(videoDatabase, mediaSourceProvider)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+class AdsDataModule {
+    @Provides
+    @Singleton
+    fun providesAdsLoaderProvider(
+        @ApplicationContext context: Context
+    ): AdsLoader.Provider {
+        return AdsLoaderProvider(context)
     }
 }
